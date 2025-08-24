@@ -67,7 +67,8 @@ Para obtener los datos más recientes de las acciones, ejecuta el script de scra
 python backend/scraper.py
 ```
 
-Este comando extraerá los datos de los tickers predefinidos en `scraper.py` y los guardará en un nuevo archivo CSV en el directorio `data/`.
+Este comando extraerá los datos de los tickers predefinidos en `scraper.py` y los guardará en la base de datos SQLite `stocks.db` dentro del directorio `data/`.
+
 
 ### 4. Iniciar el Servidor Web
 
@@ -84,23 +85,23 @@ El servidor se iniciará en modo de depuración y estará disponible en `http://
 ### Visualización de Datos
 
 1.  Abre tu navegador web y navega a `http://127.0.0.1:5000`.
-2.  Verás el **Dashboard de Acciones**, que muestra una cuadrícula con las tarjetas de información para cada acción que ha sido scrapeada. Cada tarjeta incluye:
+2.  Verás el **Dashboard de Acciones**, que muestra una cuadrícula con las tarjetas de información para cada acción que ha sido registrada. Cada tarjeta incluye:
     - **Ticker:** El símbolo de la acción (ej. AAPL).
     - **Price:** El precio de mercado actual.
     - **Previous Close:** El precio de cierre del día anterior.
     - **Open:** El precio de apertura del día.
     - **Volume:** El volumen de acciones negociadas.
     - **Market Cap:** La capitalización de mercado de la empresa.
+    - **Timestamp:** Fecha y hora en que se registró el dato.
 
 ### Interpretación de los Gráficos
 
 1.  Debajo de la cuadrícula de datos, encontrarás una sección para **visualizar el gráfico de precios** de una acción específica.
 2.  Usa el **menú desplegable** para seleccionar el ticker de la acción que deseas analizar.
-3.  El gráfico se cargará automáticamente, mostrando el precio de la acción. *Nota: En la versión actual, el gráfico es una representación simple con el último punto de datos. Futuras versiones incluirán datos históricos para un análisis más detallado.*
+3.  El gráfico se cargará automáticamente, mostrando la evolución histórica del precio de la acción según los datos almacenados en la base de datos SQLite.
 
 ## Futuras Mejoras
 
-- **Integración de Base de Datos:** Reemplazar el almacenamiento en CSV por una base de datos (ej. SQLite, PostgreSQL) para gestionar datos históricos de manera más eficiente.
 - **Gráficos Avanzados:** Implementar librerías como Chart.js o D3.js para crear gráficos más interactivos (gráficos de velas, medias móviles, etc.).
 - **Automatización de Tareas:** Configurar una tarea programada (cron job) para ejecutar el scraper automáticamente a intervalos regulares.
 - **Personalización de Tickers:** Permitir a los usuarios añadir y eliminar los tickers que desean seguir a través de la interfaz de usuario.

@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
-import pandas as pd
+import sqlite3
 import os
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -10,65 +10,46 @@ import base64
 app = Flask(__name__, static_folder='../frontend')
 CORS(app)
 
-DATA_DIR = '../data'
-
-def get_latest_csv():
-    """Finds the most recent CSV file in the data directory."""
-    files = [f for f in os.listdir(DATA_DIR) if f.endswith('.csv')]
-    if not files:
-        return None
-    # Sort files by date in filename
-    files.sort(key=lambda x: datetime.strptime(x.split('_')[-1].replace('.csv', ''), '%Y-%m-%d'), reverse=True)
-    return os.path.join(DATA_DIR, files[0])
+DB_PATH = os.path.join('../data', 'stocks.db')
 
 @app.route('/api/stocks')
 def get_stocks():
-    """API endpoint to get the latest stock data."""
-    latest_csv = get_latest_csv()
-    if not latest_csv:
-        return jsonify({"error": "No data available"}), 404
-    
-    df = pd.read_csv(latest_csv)
-    return jsonify(df.to_dict(orient='records'))
+    """API endpoint to get the latest stock data for each ticker."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    # Get the latest record for each ticker
+    c.execute('''SELECT Ticker, Price, Previous_Close, Open, Volume, Market_Cap, Timestamp FROM stock_data WHERE id IN (
+        SELECT MAX(id) FROM stock_data GROUP BY Ticker
+    )''')
+    rows = c.fetchall()
+    conn.close()
+    columns = ['Ticker', 'Price', 'Previous Close', 'Open', 'Volume', 'Market Cap', 'Timestamp']
+    data = [dict(zip(columns, row)) for row in rows]
+    return jsonify(data)
 
 @app.route('/api/stocks/chart/<ticker>')
 def get_stock_chart(ticker):
-    """API endpoint to generate and return a simple price chart for a ticker."""
-    latest_csv = get_latest_csv()
-    if not latest_csv:
-        return jsonify({"error": "No data available"}), 404
-        
-    df = pd.read_csv(latest_csv)
-    stock_data = df[df['Ticker'] == ticker]
-
-    if stock_data.empty:
-        return jsonify({"error": "Ticker not found"}), 404
-
-    # For simplicity, we'll plot the price from the single available data point.
-    # A real application would have historical data to plot a meaningful chart.
+    """API endpoint to generate and return a price chart for a ticker using historical data."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''SELECT Timestamp, Price FROM stock_data WHERE Ticker = ? ORDER BY Timestamp ASC''', (ticker,))
+    rows = c.fetchall()
+    conn.close()
+    if not rows:
+        return jsonify({"error": "Ticker not found or no data available"}), 404
+    dates = [datetime.strptime(row[0], '%Y-%m-%d %H:%M:%S') for row in rows]
+    prices = [row[1] for row in rows]
     plt.figure(figsize=(10, 5))
-    
-    # Convert price to numeric, coercing errors
-    prices = pd.to_numeric(stock_data['Price'], errors='coerce').dropna()
-    
-    if prices.empty:
-        return jsonify({"error": "Price data is not available or invalid for this ticker"}), 404
-
-    plt.plot([datetime.now().strftime('%Y-%m-%d')], prices, marker='o', linestyle='-')
-    plt.title(f'{ticker} Stock Price')
-    plt.xlabel('Date')
-    plt.ylabel('Price (USD)')
+    plt.plot(dates, prices, marker='o', linestyle='-')
+    plt.title(f'{ticker} Stock Price History')
+    plt.xlabel('Fecha')
+    plt.ylabel('Precio (USD)')
     plt.grid(True)
-    
-    # Save plot to a bytes buffer
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
-    
-    # Encode image to base64
     image_base64 = base64.b64encode(buf.read()).decode('utf-8')
     plt.close()
-    
     return jsonify({'chart': image_base64})
 
 # Serve frontend
