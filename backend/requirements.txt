@@ -1,0 +1,7 @@
+requests
+beautifulsoup4
+flask
+flask_cors
+pandas
+matplotlib
+sqlalchemy
