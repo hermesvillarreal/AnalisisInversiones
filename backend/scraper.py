@@ -31,7 +31,7 @@ def save_to_sqlite(data_list):
     if not data_list:
         return
 
-    db_path = os.path.join('../data', 'stocks.db')
+    db_path = os.path.join('data', 'stocks.db')
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
     conn = sqlite3.connect(db_path)
     c = conn.cursor()

@@ -10,7 +10,7 @@ import base64
 app = Flask(__name__, static_folder='../frontend')
 CORS(app)
 
-DB_PATH = os.path.join('../data', 'stocks.db')
+DB_PATH = os.path.join('data', 'stocks.db')
 
 @app.route('/api/stocks')
 def get_stocks():
